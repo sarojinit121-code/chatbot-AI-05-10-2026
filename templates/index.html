@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalLens AI — Your Private AI Chat</title>
+    <meta name="description" content="A private AI chatbot for ideas, writing, coding, learning, and travel.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Fallback & CDN support for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="dark-theme">
+    <div class="app-layout">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                        </svg>
+                    </div>
+                    <div class="brand-info">
+                        <h2>LocalLens <span class="badge-ai">AI</span></h2>
+                        <span class="sub-text">Your private AI companion</span>
+                    </div>
+                </div>
+                <button class="icon-btn close-sidebar-btn" id="closeSidebarBtn" title="Close Sidebar">✕</button>
+            </div>
+
+            <!-- ACTION: NEW CHAT -->
+            <button class="btn btn-primary new-chat-btn" id="newChatBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>New Chat</span>
+            </button>
+
+            <!-- EXPLORE DESTINATIONS ACCORDION -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>EXPLORE DESTINATIONS</span>
+                    <span class="badge-counter" id="destTotalCount">9 Cities</span>
+                </div>
+                <div class="destination-list" id="destinationList">
+                    <!-- Populated via JS -->
+                    <div class="loading-shimmer-mini"></div>
+                </div>
+            </div>
+
+            <!-- CATEGORY CHIPS -->
+            <div class="sidebar-section">
+                <div class="section-title">THEME & EXPERIENCES</div>
+                <div class="theme-tags">
+                    <button class="theme-tag active" data-category="all">🌐 All Spots</button>
+                    <button class="theme-tag" data-category="hill">🏔️ Hill Stations</button>
+                    <button class="theme-tag" data-category="temple">🛕 Temples & Heritage</button>
+                    <button class="theme-tag" data-category="beach">🏖️ Beaches & Coastal</button>
+                    <button class="theme-tag" data-category="nature">🌿 Nature & Wildlife</button>
+                </div>
+            </div>
+
+            <!-- CHAT HISTORY -->
+            <div class="sidebar-section flex-grow">
+                <div class="section-title">
+                    <span>RECENT CHATS</span>
+                    <button class="icon-btn-text" id="clearHistoryBtn" title="Clear all history">Clear</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="empty-history">No conversations yet</div>
+                </div>
+            </div>
+
+            <!-- OLLAMA STATUS FOOTER -->
+            <div class="sidebar-footer">
+                <div class="engine-status-card" id="engineStatusCard">
+                    <div class="status-indicator-dot" id="statusDot"></div>
+                    <div class="engine-details">
+                        <span class="engine-name" id="engineName">Checking Ollama...</span>
+                        <span class="engine-meta" id="engineMeta">Port 11434</span>
+                    </div>
+                    <button class="icon-btn info-btn" id="ollamaInfoBtn" title="Ollama Setup & Commands">ℹ️</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <!-- TOP NAVBAR -->
+            <header class="top-nav">
+                <div class="nav-left">
+                    <button class="icon-btn menu-toggle" id="menuToggle" title="Toggle Navigation">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div class="current-destination-badge" id="currentDestBadge">
+                        <span class="pin-icon">📍</span>
+                        <span id="activeDestinationName">Your AI companion</span>
+                    </div>
+                <div class="nav-center">
+                    <!-- INSTANT PLACE SEARCH BAR -->
+                    <div class="search-places-bar-wrapper" id="searchBarWrapper">
+                        <div class="search-input-box">
+                            <span class="search-icon">🔍</span>
+                            <input 
+                                type="text" 
+                                id="placeSearchInput" 
+                                class="place-search-input" 
+                                placeholder="Search places or details (e.g. timings, entry fee, food, route)..." 
+                                autocomplete="off"
+                            >
+                            <button class="clear-search-btn" id="clearSearchBtn" title="Clear">✕</button>
+                        </div>
+                        <div class="search-dropdown" id="searchDropdown"></div>
+                    </div>
+                </div>
+
+                <div class="nav-right">
+                    <!-- LANGUAGE SELECTOR -->
+                    <div class="lang-selector">
+                        <button class="lang-btn active" data-lang="english">EN</button>
+                        <button class="lang-btn" data-lang="tanglish">Tanglish</button>
+                        <button class="lang-btn" data-lang="tamil">தமிழ்</button>
+                    </div>
+
+                    <!-- MODEL SELECTOR -->
+                    <div class="model-select-wrapper">
+                        <span class="model-icon">🤖</span>
+                        <select id="modelSelect" class="model-select">
+                            <option value="llama3.2:3b">Llama 3.2 (3B)</option>
+                            <option value="llama3.2:1b">Llama 3.2 (1B)</option>
+                            <option value="qwen2.5:3b">Qwen 2.5 (3B)</option>
+                            <option value="mistral">Mistral (7B)</option>
+                        </select>
+                    </div>
+
+                    <!-- EXPORT / ACTIONS -->
+                    <button class="icon-btn" id="exportChatBtn" title="Export Itinerary / Chat to File">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CHAT SCROLL AREA -->
+            <div class="chat-container" id="chatContainer">
+                
+                <!-- WELCOME HERO (Visible before chat starts) -->
+                <div class="welcome-hero" id="welcomeHero">
+                    <div class="ai-orb" aria-hidden="true">
+                        <div class="orb-ring orb-ring-one"></div>
+                        <div class="orb-ring orb-ring-two"></div>
+                        <div class="orb-core">
+                            <svg viewBox="0 0 48 48" fill="none">
+                                <path d="M24 5.5 28.8 19.2 42.5 24l-13.7 4.8L24 42.5l-4.8-13.7L5.5 24l13.7-4.8L24 5.5Z" fill="currentColor"/>
+                                <circle cx="35.5" cy="11.5" r="3" fill="currentColor" opacity=".6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="hero-badge"><span class="status-pulse"></span> PRIVATE AI · READY WHEN YOU ARE</div>
+                    <h1 class="hero-title">A little more <span class="gradient-text">thoughtful.</span><br>Ask me anything.</h1>
+                    <p class="hero-subtitle">
+                        Think it through, make something, or get unstuck. Your conversations stay on your device.
+                    </p>
+
+                    <!-- QUICK PROMPT PILLS -->
+                    <div class="prompt-pills-container">
+                        <span class="pills-title">A few good places to start</span>
+                        <div class="prompt-pills" id="promptPills">
+                            <button class="prompt-pill" data-prompt="Explain a difficult idea in simple words, then give me a real-life example.">
+                                <span class="prompt-icon">✳</span><span><strong>Learn something</strong><small>Make a tricky idea click</small></span>
+                            </button>
+                            <button class="prompt-pill" data-prompt="Help me brainstorm a fresh idea for a project I can build this weekend.">
+                                <span class="prompt-icon">✧</span><span><strong>Explore an idea</strong><small>Turn a spark into a plan</small></span>
+                            </button>
+                            <button class="prompt-pill" data-prompt="Write a clear, friendly email asking to reschedule a meeting.">
+                                <span class="prompt-icon">↗</span><span><strong>Write with me</strong><small>Get the words just right</small></span>
+                            </button>
+                            <button class="prompt-pill" data-prompt="Help me debug this code step by step: ">
+                                <span class="prompt-icon">&lt;/&gt;</span><span><strong>Build something</strong><small>Untangle a coding problem</small></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MESSAGES LIST -->
+                <div class="messages-list" id="messagesList"></div>
+
+                <!-- TYPING INDICATOR -->
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="bot-avatar-mini">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                        </svg>
+                    </div>
+                    <div class="typing-bubble">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="typing-text">Thinking through your question...</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CHAT INPUT DOCK -->
+            <div class="chat-input-wrapper">
+                <!-- Active Destination Chip if set -->
+                <div class="active-filter-strip" id="activeFilterStrip" style="display: none;">
+                    <span class="filter-label">📍 Destination Focus:</span>
+                    <span class="filter-value" id="filterValueText">Ooty</span>
+                    <button class="clear-filter-btn" id="clearFilterBtn" title="Clear filter">✕</button>
+                </div>
+
+                <div class="input-box">
+                    <!-- SPEECH TO TEXT BUTTON -->
+                    <button class="input-action-btn voice-btn" id="voiceBtn" title="Voice Input (Speech-to-Text)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
+
+                    <!-- TEXTAREA -->
+                    <textarea 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="Message LocalLens... ask, create, or just think out loud" 
+                        rows="1"
+                    ></textarea>
+
+                    <!-- SEND BUTTON -->
+                    <button class="send-btn" id="sendBtn" title="Send Question">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-helper-text">
+                    <span>Private by design · Your chats stay on this device</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- OLLAMA SETUP & INFO MODAL -->
+    <div class="modal-overlay" id="ollamaModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span class="modal-icon">🤖</span>
+                    <h3>Ollama Local LLM Setup Guide</h3>
+                </div>
+                <button class="modal-close" id="closeOllamaModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    LocalLens connects to <strong>Ollama</strong> running privately on your laptop. 
+                    General subject answers use a model running locally on your computer. No external API keys or cloud AI service are required.
+                </p>
+
+                <div class="setup-step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Download & Install Ollama</h4>
+                        <p>If you don't have Ollama yet, download it from <a href="https://ollama.com" target="_blank" rel="noopener">ollama.com</a>.</p>
+                    </div>
+                </div>
+
+                <div class="setup-step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Pull the Llama 3.2 Model</h4>
+                        <p>Open your terminal (PowerShell or Command Prompt) and run:</p>
+                        <div class="code-block">
+                            <code>ollama pull llama3.2:3b</code>
+                            <button class="copy-code-btn" data-copy="ollama pull llama3.2:3b">Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Start Ollama Engine</h4>
+                        <p>Start the local server daemon:</p>
+                        <div class="code-block">
+                            <code>ollama serve</code>
+                            <button class="copy-code-btn" data-copy="ollama serve">Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-notice">
+                    <strong>🛡️ Built-in Offline Support:</strong> Current time is read from your computer clock, and supported South India tourism questions use the local SQLite knowledge base. General subject answers require Ollama to be running.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="checkOllamaBtn">🔄 Check Connection Now</button>
+                <button class="btn btn-primary" id="dismissOllamaModal">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CITY PLACES DEEP DIVE MODAL -->
+    <div class="modal-overlay" id="cityModal">
+        <div class="modal-box modal-box-large">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span class="modal-icon" id="cityModalIcon">📍</span>
+                    <h3 id="cityModalTitle">City Name</h3>
+                </div>
+                <button class="modal-close" id="closeCityModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="city-modal-itinerary" id="cityModalItinerary"></div>
+                <h4 class="modal-subheading">🏛️ Verified Attractions & Spots</h4>
+                <div class="city-places-grid" id="cityPlacesGrid"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="askAboutCityBtn">💬 Ask Chatbot about this City</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script src="/static/script.js"></script>
+</body>
+</html>

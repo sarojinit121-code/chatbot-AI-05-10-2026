@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+tourism.db
+test_tamil_out.txt
+.vscode/
